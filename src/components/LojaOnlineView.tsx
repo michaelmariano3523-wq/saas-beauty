@@ -10,6 +10,8 @@ import { getBarberBySlug, fetchInventoryByShopId, getShopById, addAppointment } 
 
 // @ts-ignore
 const HF_TOKEN = (import.meta as any).env?.VITE_HF_TOKEN || process.env.VITE_HF_TOKEN || '';
+// @ts-ignore
+const GEMINI_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
 
 export default function LojaOnlineView() {
   const params = new URLSearchParams(window.location.search);
@@ -58,25 +60,37 @@ Serviços disponíveis: Corte, Manicure, Pedicure, Sobrancelha, Maquiagem, Hidra
 
 Responda em português brasileiro, seja convincente mas natural. Se a cliente mostrar interesse, incentive a agendar.`;
 
-      if (!HF_TOKEN) {
+      if (!HF_TOKEN && !GEMINI_KEY) {
         setChatMsgs(prev => [...prev, { role: 'assistant', text: '😅 Desculpe, o chat IA está temporariamente indisponível. Mas você pode agendar direto pelo botão "Agendar Horário" ou falar conosco pelo WhatsApp!' }]);
         setChatLoading(false);
         return;
       }
 
-      const { InferenceClient } = await import('@huggingface/inference');
-      const client = new InferenceClient(HF_TOKEN);
-      const res = await client.chatCompletion({
-        model: 'meta-llama/Llama-3.1-8B-Instruct',
-        messages: [
-          { role: 'system', content: prompt },
-          ...chatMsgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
-          { role: 'user', content: userText }
-        ],
-        max_tokens: 300,
-      });
-      const reply = res.choices?.[0]?.message?.content || '😊 Obrigado! Quer agendar um horário?;
-      setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
+      if (GEMINI_KEY) {
+        const { GoogleGenAI } = await import('@google/genai');
+        const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+        const historyText = chatMsgs.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
+        const res = await ai.models.generateContent({
+          model: 'gemini-pro',
+          contents: `${prompt}\n\nConversation history:\n${historyText || 'No previous messages.'}\n\nUser message: "${userText}"\n\nResponse guidelines: Be professional, friendly, and convincing. Respond in Brazilian Portuguese.`
+        });
+        const reply = res.text || '😊 Obrigado! Quer agendar um horário?';
+        setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
+      } else {
+        const { InferenceClient } = await import('@huggingface/inference');
+        const client = new InferenceClient(HF_TOKEN);
+        const res = await client.chatCompletion({
+          model: 'meta-llama/Llama-3.1-8B-Instruct',
+          messages: [
+            { role: 'system', content: prompt },
+            ...chatMsgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
+            { role: 'user', content: userText }
+          ],
+          max_tokens: 300,
+        });
+        const reply = res.choices?.[0]?.message?.content || '😊 Obrigado! Quer agendar um horário?';
+        setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
+      }
     } catch {
       setChatMsgs(prev => [...prev, { role: 'assistant', text: '😅 Poxa, tive um probleminha! Mas você pode agendar clicando em "Agendar Horário" ou chamar no WhatsApp!' }]);
     } finally {
@@ -231,7 +245,7 @@ Responda em português brasileiro, seja convincente mas natural. Se a cliente mo
         body: JSON.stringify({
           customerName: appointmentPix.name,
           customerPhone: appointmentPix.phone,
-          productName: `Corte - ${appointmentPix.date} ${appointmentPix.time}`,
+          productName: `Serviço de Beleza - ${appointmentPix.date} ${appointmentPix.time}`,
           productPrice: 35,
           quantity: 1,
           shopId: barber?.shop_id,
@@ -363,7 +377,7 @@ Responda em português brasileiro, seja convincente mas natural. Se a cliente mo
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-[#D489B0]" />
-                <h2 className="text-lg font-bold text-white">Estilos de Corte</h2>
+                <h2 className="text-lg font-bold text-white">Portfólio de Serviços</h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {styles.map((img, i) => (
@@ -437,8 +451,8 @@ Responda em português brasileiro, seja convincente mas natural. Se a cliente mo
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-[#D489B0]" />
                 <div>
-                  <p className="font-bold text-sm text-white">Corte de Cabelo</p>
-                  <p className="text-[10px] text-[#888]">45 min • Serviço profissional</p>
+<p className="font-bold text-sm text-white">Serviço de Beleza</p>
+                    <p className="text-[10px] text-[#888]">45 min • Serviço profissional</p>
                 </div>
               </div>
               <button onClick={() => { setShowSchedule(true); setForm({ name: '', phone: '', date: '', time: '' }); }}
@@ -671,7 +685,7 @@ Responda em português brasileiro, seja convincente mas natural. Se a cliente mo
             {chatMsgs.length === 0 && (
               <div className="text-center text-[#555] text-xs py-8">
                 <Sparkles className="w-8 h-8 mx-auto mb-2 text-[#D489B0]" />
-                <p className="font-bold text-sm text-white mb-1">👋 Quer um corte novo?</p>
+                <p className="font-bold text-sm text-white mb-1">👋 Quer um serviço novo?</p>
                 <p>Pergunte sobre estilos, valores ou agende agora!</p>
               </div>
             )}

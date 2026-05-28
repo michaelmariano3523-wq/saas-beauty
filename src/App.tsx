@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { chatWithAI } from './services/huggingfaceService';
+import { chatWithAI } from './services/geminiService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 // Global handler for unhandled promise rejections
 if (typeof window !== 'undefined') {
@@ -2625,10 +2625,10 @@ function BarbersView({ onNavigate, shopId, maxBarbers }: { onNavigate: (v: View)
     const barberApps = appointments.filter(a =>
       a.professional_id === barberId && a.status === 'confirmed'
     );
-    const cuts = barberApps.length;
+    const services = barberApps.length;
     const rev = barberApps.reduce((sum: number, a: any) => sum + (Number(a.service_price) || 0), 0);
     const rating = cuts > 0 ? Math.min(5, 4 + (cuts / 100)).toFixed(1) : '0.0';
-    return { cuts, rev, rating: Number(rating) };
+    return { services, rev, rating: Number(rating) };
   };
 
   const getInitials = (name: string) => {
@@ -2791,7 +2791,7 @@ function BarbersView({ onNavigate, shopId, maxBarbers }: { onNavigate: (v: View)
 
             <div className="grid grid-cols-3 gap-2 border-y border-[#2A2A2A] py-4 mb-6">
               <div>
-                <p className="text-sm font-bold text-[#D489B0]">{stats.cuts}</p>
+                <p className="text-sm font-bold text-[#D489B0]">{stats.services}</p>
                 <p className="text-[9px] text-[#888] uppercase font-bold tracking-wider">Serviços</p>
               </div>
               <div>
@@ -2949,7 +2949,7 @@ function BarbersView({ onNavigate, shopId, maxBarbers }: { onNavigate: (v: View)
                 {editBarber.image && <img src={editBarber.image} className="w-20 h-20 object-cover rounded-full mt-2 border border-[#2A2A2A]" />}
               </div>
               <div>
-                <label className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2 block">Fotos de Cortes (exemplos)</label>
+                <label className="text-[#888] text-xs font-bold uppercase tracking-wider mb-2 block">Fotos de Serviços (portfólio)</label>
                 <input type="file" accept="image/*" onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;

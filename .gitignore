@@ -19,3 +19,5 @@ android/capacitor-cordova-android-plugins/build/
 local.properties
 *.apk
 *.aab
+
+.vercel
