@@ -9,7 +9,14 @@ const staggeredDelay = () => {
   return _fetchOrder * 2000 + Math.random() * 1000;
 };
 
-const activeSubscriptions: Map<string, { channel: RealtimeChannel; refCount: number }> = new Map();
+interface SubEntry {
+  channel: RealtimeChannel;
+  refCount: number;
+  subscribed: boolean;
+  onConfigs: Parameters<RealtimeChannel['on']>[];
+}
+
+const activeSubscriptions: Map<string, SubEntry> = new Map();
 
 function subscribeChannel(
   key: string,
@@ -19,6 +26,9 @@ function subscribeChannel(
   const existing = activeSubscriptions.get(key);
   if (existing) {
     existing.refCount++;
+    if (!existing.subscribed) {
+      existing.onConfigs.push(onConfig);
+    }
     return () => {
       const sub = activeSubscriptions.get(key);
       if (sub) {
@@ -33,8 +43,20 @@ function subscribeChannel(
 
   const channel = supabase.channel(key);
   channel.on(onConfig[0], onConfig[1], onConfig[2]);
-  channel.subscribe();
-  activeSubscriptions.set(key, { channel, refCount: 1 });
+
+  const entry: SubEntry = {
+    channel,
+    refCount: 1,
+    subscribed: false,
+    onConfigs: [onConfig],
+  };
+  activeSubscriptions.set(key, entry);
+
+  channel.subscribe((status: string) => {
+    if (status === 'SUBSCRIBED') {
+      entry.subscribed = true;
+    }
+  });
 
   return () => {
     const sub = activeSubscriptions.get(key);

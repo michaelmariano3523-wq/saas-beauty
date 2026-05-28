@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { chatWithAI } from './services/geminiService';
+import { chatWithAI } from './services/nvidiaService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 // Global handler for unhandled promise rejections
 if (typeof window !== 'undefined') {
@@ -293,9 +293,9 @@ Que alegria ter você aqui! Vou te guiar pelos nossos módulos:
       
       if (shopId) {
         const today = new Date().toISOString().split('T')[0];
-        const todayApps = await new Promise<any[]>((resolve) => {
-          subscribeToAppointments(shopId, resolve);
-        });
+const todayApps = await new Promise<any[]>((resolve) => {
+        const unsub = subscribeToAppointments(shopId, (data: any[]) => { resolve(data); setTimeout(() => unsub(), 0); });
+      });
         const confirmedToday = todayApps.filter((a: any) => fmtDate(a.date) === today && a.status === 'confirmed');
         const pendingToday = todayApps.filter((a: any) => fmtDate(a.date) === today && a.status === 'pending');
         
@@ -328,9 +328,9 @@ Que alegria ter você aqui! Vou te guiar pelos nossos módulos:
         }
         
         try {
-          const stockItems = await new Promise<any[]>((resolve) => {
-            subscribeToCollection('inventory', resolve, shopId);
-          });
+const stockItems = await new Promise<any[]>((resolve) => {
+        const unsub = subscribeToCollection('inventory', (data: any[]) => { resolve(data); setTimeout(() => unsub(), 0); }, shopId);
+      });
           const lowStock = stockItems.filter((item: any) => (item.quantity || 0) <= 5);
           if (lowStock.length > 0) {
             context += `\n**⚠️ Estoque Baixo:**\n`;
@@ -2193,14 +2193,14 @@ function DashboardView({ onNavigate, shopId }: { onNavigate: (v: View) => void, 
       try {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-        
-        const allApps = await new Promise<any[]>((resolve) => {
-          subscribeToAppointments(shopId, resolve);
-        });
-        
-        const recentApps = allApps.filter((a: any) => fmtDate(a.date) >= dateStr && a.status === 'confirmed');
-        const revenue = recentApps.reduce((sum: number, app: any) => sum + (Number(app.service_price) || 0), 0);
+const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+  const allApps = await new Promise<any[]>((resolve) => {
+    const unsub = subscribeToAppointments(shopId, (data: any[]) => { resolve(data); setTimeout(() => unsub(), 0); });
+  });
+
+  const recentApps = allApps.filter((a: any) => fmtDate(a.date) >= dateStr && a.status === 'confirmed');
+  const revenue = recentApps.reduce((sum: number, app: any) => sum + (Number(app.service_price) || 0), 0);
         const uniqueClients = new Set(recentApps.map((a: any) => a.user_phone || a.user_name));
         
         setMetrics(prev => ({
@@ -3416,16 +3416,16 @@ function FinanceiroView({ shopId }: { shopId: string }) {
       try {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-        
-        const allApps = await new Promise<any[]>((resolve) => {
-          subscribeToAppointments(shopId, resolve);
-        });
-        
-        const fmtDate = (dt: string) => dt.split('T')[0];
-        const recentApps = allApps.filter((a: any) => fmtDate(a.date) >= dateStr && a.status === 'confirmed');
-        
-        const totalRevenue = recentApps.reduce((sum: number, app: any) => sum + (Number(app.service_price) || 0), 0);
+const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+  const allApps = await new Promise<any[]>((resolve) => {
+    const unsub = subscribeToAppointments(shopId, (data: any[]) => { resolve(data); setTimeout(() => unsub(), 0); });
+  });
+
+  const fmtDate = (dt: string) => dt.split('T')[0];
+  const recentApps = allApps.filter((a: any) => fmtDate(a.date) >= dateStr && a.status === 'confirmed');
+
+  const totalRevenue = recentApps.reduce((sum: number, app: any) => sum + (Number(app.service_price) || 0), 0);
         setRevenue(totalRevenue);
         
         const totalExpenses = totalRevenue * 0.3;

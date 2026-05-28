@@ -9,9 +9,7 @@ import { supabase } from '../services/supabaseClient';
 import { getBarberBySlug, fetchInventoryByShopId, getShopById, addAppointment } from '../services/dbService';
 
 // @ts-ignore
-const HF_TOKEN = (import.meta as any).env?.VITE_HF_TOKEN || process.env.VITE_HF_TOKEN || '';
-// @ts-ignore
-const GEMINI_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+const NVIDIA_KEY = (import.meta as any).env?.VITE_NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY || '';
 
 export default function LojaOnlineView() {
   const params = new URLSearchParams(window.location.search);
@@ -60,37 +58,36 @@ Serviços disponíveis: Corte, Manicure, Pedicure, Sobrancelha, Maquiagem, Hidra
 
 Responda em português brasileiro, seja convincente mas natural. Se a cliente mostrar interesse, incentive a agendar.`;
 
-      if (!HF_TOKEN && !GEMINI_KEY) {
+      if (!NVIDIA_KEY) {
         setChatMsgs(prev => [...prev, { role: 'assistant', text: '😅 Desculpe, o chat IA está temporariamente indisponível. Mas você pode agendar direto pelo botão "Agendar Horário" ou falar conosco pelo WhatsApp!' }]);
         setChatLoading(false);
         return;
       }
 
-      if (GEMINI_KEY) {
-        const { GoogleGenAI } = await import('@google/genai');
-        const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
-        const historyText = chatMsgs.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`).join('\n');
-        const res = await ai.models.generateContent({
-          model: 'gemini-pro',
-          contents: `${prompt}\n\nConversation history:\n${historyText || 'No previous messages.'}\n\nUser message: "${userText}"\n\nResponse guidelines: Be professional, friendly, and convincing. Respond in Brazilian Portuguese.`
-        });
-        const reply = res.text || '😊 Obrigado! Quer agendar um horário?';
-        setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
-      } else {
-        const { InferenceClient } = await import('@huggingface/inference');
-        const client = new InferenceClient(HF_TOKEN);
-        const res = await client.chatCompletion({
-          model: 'meta-llama/Llama-3.1-8B-Instruct',
+      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${NVIDIA_KEY}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.1-8b-instruct',
           messages: [
             { role: 'system', content: prompt },
             ...chatMsgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
             { role: 'user', content: userText }
           ],
           max_tokens: 300,
-        });
-        const reply = res.choices?.[0]?.message?.content || '😊 Obrigado! Quer agendar um horário?';
-        setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
-      }
+          temperature: 0.7,
+          top_p: 0.9
+        })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const reply = data.choices?.[0]?.message?.content || '😊 Obrigado! Quer agendar um horário?';
+      setChatMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
     } catch {
       setChatMsgs(prev => [...prev, { role: 'assistant', text: '😅 Poxa, tive um probleminha! Mas você pode agendar clicando em "Agendar Horário" ou chamar no WhatsApp!' }]);
     } finally {
