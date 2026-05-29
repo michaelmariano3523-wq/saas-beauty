@@ -1,5 +1,4 @@
-import { db } from '../firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { supabase } from './supabaseClient';
 
 export interface EmailConfig {
   smtpHost: string;
@@ -24,12 +23,14 @@ export interface EmailTemplate {
 // Get email config
 export async function getEmailConfig(): Promise<EmailConfig | null> {
   try {
-    const docRef = doc(db, 'settings', 'email');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as EmailConfig;
-    }
-    return null;
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .eq('id', 'email')
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error;
+    return data as EmailConfig || null;
   } catch (error) {
     console.error('Error getting email config:', error);
     return null;
@@ -39,10 +40,15 @@ export async function getEmailConfig(): Promise<EmailConfig | null> {
 // Save email config
 export async function saveEmailConfig(config: EmailConfig) {
   try {
-    await setDoc(doc(db, 'settings', 'email'), {
-      ...config,
-      updatedAt: new Date()
-    }, { merge: true });
+    const { error } = await supabase
+      .from('settings')
+      .upsert({
+        id: 'email',
+        ...config,
+        updatedAt: new Date().toISOString()
+      }, { onConflict: ['id'] });
+      
+    if (error) throw error;
   } catch (error) {
     console.error('Error saving email config:', error);
     throw error;
@@ -52,8 +58,13 @@ export async function saveEmailConfig(config: EmailConfig) {
 // Get email templates
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, 'emailTemplates'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
+    const { data, error } = await supabase
+      .from('emailTemplates')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error && error.code !== 'PGRST116') throw error;
+    return (data as EmailTemplate[]) || [];
   } catch (error) {
     console.error('Error getting email templates:', error);
     return [];
@@ -64,16 +75,25 @@ export async function getEmailTemplates(): Promise<EmailTemplate[]> {
 export async function saveEmailTemplate(template: EmailTemplate) {
   try {
     if (template.id) {
-      await setDoc(doc(db, 'emailTemplates', template.id), {
-        ...template,
-        updatedAt: new Date()
-      }, { merge: true });
+      const { error } = await supabase
+        .from('emailTemplates')
+        .update({
+          ...template,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', template.id);
+        
+      if (error) throw error;
     } else {
-      await setDoc(doc(collection(db, 'emailTemplates')), {
-        ...template,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      const { error } = await supabase
+        .from('emailTemplates')
+        .insert({
+          ...template,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        
+      if (error) throw error;
     }
   } catch (error) {
     console.error('Error saving email template:', error);
@@ -106,15 +126,15 @@ export async function sendEmail(to: string, templateType: string, variables: Rec
       subject = subject.replace(regex, value);
     });
 
-    // In real implementation, this would call a Firebase Cloud Function or backend API
-    console.log('Sending email:', { to, subject, body, config });
-    
-    // Simulate API call to cloud function
-    const response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to, subject, body, config })
-    });
+     // Simulate API call to backend function
+     console.log('Sending email:', { to, subject, body, config });
+     
+     // Call backend API to send email
+     const response = await fetch('/api/send-email', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ to, subject, body, config })
+     });
 
     return await response.json();
   } catch (error) {

@@ -23,7 +23,7 @@ export async function chatWithAI(message: string, context: string, history: { ro
         - CNPJ: 52.846.879/0001-90
         - Audience: All barbers — from beginners to professionals
         - Purpose: Digitalize and automate your beautysalon operations
-        - Tech: React + TypeScript + Vite, Supabase, Firebase, Vercel
+         - Tech: React + TypeScript + Vite, Supabase, Vercel
         - Plans: Free, Basic, Pro, Enterprise
 
         ## PLATFORM MODULES:

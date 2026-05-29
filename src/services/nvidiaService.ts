@@ -22,7 +22,7 @@ KERNEL BEAUTY SHOPPER é um **SaaS de gestão para salões**.
 - **CNPJ:** 52.846.879/0001-90
 - **Público:** Todos os profissionais — do iniciante ao profissional
 - **Propósito:** Digitalizar e automatizar a operação do seu salão
-- **Tecnologia:** React + TypeScript + Vite, Supabase, Firebase, Vercel
+- **Tecnologia:** React + TypeScript + Vite, Supabase, Vercel
 - **Planos:** Free, Basic, Pro e Enterprise
 
 ## MÓDULOS DA PLATAFORMA:

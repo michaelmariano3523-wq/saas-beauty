@@ -23,8 +23,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
-    "firebase": "^12.12.1",
-    "firebase-admin": "^13.8.0",
+
     "lucide-react": "^0.546.0",
     "motion": "^12.40.0",
     "react": "^19.0.1",
