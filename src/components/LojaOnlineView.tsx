@@ -47,7 +47,7 @@ export default function LojaOnlineView() {
     setChatMsgs(prev => [...prev, { role: 'user', text: userText }]);
     setChatLoading(true);
     try {
-      const prompt = `Você é um assistente de sal�o amigável. Seu objetivo é ajudar a cliente a escolher um serviço de beleza e convencê-la a agendar um horário. Seja simpática e persuasiva.
+      const prompt = `Você é um assistente de salão amigável. Seu objetivo é ajudar a cliente a escolher um serviço de beleza e convencê-la a agendar um horário. Seja simpática e persuasiva.
 
 profissional: ${barber?.name || 'Profissional'}
 Bio: ${barber?.bio || 'Especialista em beleza'}

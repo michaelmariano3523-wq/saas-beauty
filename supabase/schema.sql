@@ -130,6 +130,19 @@ alter table subscriptions enable row level security;
 alter table payments enable row level security;
 alter table withdrawals enable row level security;
 
+-- Deposits table
+create table deposits (
+  id uuid primary key default uuid_generate_v4(),
+  shop_id uuid not null references shops(id) on delete cascade,
+  amount numeric(10, 2) not null check (amount > 0),
+  pix_key text not null,
+  status text default 'pending' check (status in ('pending', 'confirmed', 'rejected')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table deposits enable row level security;
+
 -- Create basic policies for authenticated users
 -- These policies assume the app uses Supabase Auth and shop owners can only access their own data
 
@@ -239,7 +252,7 @@ create policy "Withdrawals viewable by shop owner"
     exists (
       select 1 from shops
       where shops.id = withdrawals.shop_id
-      and shops.owner_id = auth.uid()
+        and shops.owner_id = auth.uid()
     )
   );
 
@@ -249,8 +262,42 @@ create policy "Withdrawals creatable by shop owner"
     exists (
       select 1 from shops
       where shops.id = withdrawals.shop_id
-      and shops.owner_id = auth.uid()
+        and shops.owner_id = auth.uid()
     )
+  );
+
+-- Deposits viewable by shop owners
+create policy "Deposits viewable by shop owners"
+  on deposits for select
+  using (
+    exists (
+      select 1 from shops
+      where shops.id = deposits.shop_id
+        and shops.owner_id = auth.uid()
+    )
+  );
+
+-- Deposits creatable by shop owners
+create policy "Deposits creatable by shop owners"
+  on deposits for insert
+  with check (
+    exists (
+      select 1 from shops
+      where shops.id = deposits.shop_id
+        and shops.owner_id = auth.uid()
+    )
+  );
+
+-- Withdrawals status can be updated only on Friday
+create policy "Withdrawals status can be updated only on Friday"
+  on withdrawals for update
+  using (
+    exists (
+      select 1 from shops
+      where shops.id = withdrawals.shop_id
+        and shops.owner_id = auth.uid()
+    )
+    and date_part('dow', now()) = 5  -- 5 = Friday
   );
 
 -- Create indexes for frequently queried columns
@@ -309,6 +356,7 @@ create table settings (
   smtp_port integer,
   smtp_user text,
   smtp_pass text,
+  pix_key text,
   smtp_secure boolean default true,
   from_email text,
   from_name text,
