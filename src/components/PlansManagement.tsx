@@ -132,7 +132,7 @@ export default function PlansManagement({ plans, onAddPlan, onUpdatePlan, onDele
                       <span className="text-sm font-bold text-[#D489B0]">
                         {plan.price === 0 ? 'Grátis' : formatCurrency(plan.price)}
                       </span>
-                      {plan.price > 0 && <span className="text-[10px] text-[#555] ml-1">/{plan.interval === 'yearly' ? 'ano' : 'mês'}</span>}
+                      {plan.price > 0 && <span className="text-[10px] text-[#555] ml-1 whitespace-nowrap">/{plan.interval === 'yearly' ? 'ano' : 'mês'}</span>}
                     </td>
                     <td className="p-4">
                       <span className="text-sm text-[#eee]">{plan.features?.length || 0} recursos</span>

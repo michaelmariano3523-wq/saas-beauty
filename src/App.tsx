@@ -132,13 +132,14 @@ function MainApp() {
   const chatEndRef = React.useRef<HTMLDivElement>(null);
   const [isNewOwner, setIsNewOwner] = React.useState(false);
   const [shop, setShop] = React.useState<any>(null);
+  const [shopIdLoading, setShopIdLoading] = React.useState<boolean>(true);
   const [shopId, setShopId] = React.useState<string>('');
   const [shopPlan, setShopPlan] = React.useState<string>('free');
   
   // Initialize shop ID and plan on login
   React.useEffect(() => {
     if (!user?.id) return;
-    
+    setShopIdLoading(true);
     async function setupShopId() {
       try {
         // Try to find existing shop by owner_id
@@ -174,6 +175,8 @@ function MainApp() {
         }
       } catch (err) {
         console.error('Error setting up shop:', err);
+      } finally {
+        setShopIdLoading(false);
       }
     }
     
