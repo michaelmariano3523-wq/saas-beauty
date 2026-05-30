@@ -136,7 +136,7 @@ function MainApp() {
   const [shopId, setShopId] = React.useState<string>('');
   const [shopPlan, setShopPlan] = React.useState<string>('free');
   
-  // Initialize shop ID and plan on login
+  // Initialize shop ID and plan on login (rebuild trigger)
   React.useEffect(() => {
     if (!user?.id) return;
     setShopIdLoading(true);
