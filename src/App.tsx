@@ -135,6 +135,7 @@ function MainApp() {
   const [shopIdLoading, setShopIdLoading] = React.useState<boolean>(true);
   const [shopId, setShopId] = React.useState<string>('');
   const [shopPlan, setShopPlan] = React.useState<string>('free');
+  const [activeAdminTab, setActiveAdminTab] = React.useState<string>('overview');
   // Notification system state
   const [notifications, setNotifications] = React.useState<any[]>([]);
   const notifRef = React.useRef<HTMLDivElement>(null);
