@@ -136,13 +136,14 @@ function MainApp() {
   const [shopId, setShopId] = React.useState<string>('');
   const [shopPlan, setShopPlan] = React.useState<string>('free');
   const [activeAdminTab, setActiveAdminTab] = React.useState<string>('overview');
-  // Notification system state for submodule
+
+// Notification system state
   const [notifications, setNotifications] = React.useState<any[]>([]);
   const notifRef = React.useRef<HTMLDivElement>(null);
   const [notifOpen, setNotifOpen] = React.useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
   
-  // Initialize shop ID and plan on login
+  // Initialize shop ID and plan on login (rebuild trigger)
   React.useEffect(() => {
     if (!user?.id) return;
     setShopIdLoading(true);
