@@ -135,6 +135,11 @@ function MainApp() {
   const [shopIdLoading, setShopIdLoading] = React.useState<boolean>(true);
   const [shopId, setShopId] = React.useState<string>('');
   const [shopPlan, setShopPlan] = React.useState<string>('free');
+  // Notification system state for submodule
+  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const notifRef = React.useRef<HTMLDivElement>(null);
+  const [notifOpen, setNotifOpen] = React.useState(false);
+  const unreadCount = notifications.filter((n) => !n.read).length;
   
   // Initialize shop ID and plan on login
   React.useEffect(() => {
@@ -383,6 +388,15 @@ const stockItems = await new Promise<any[]>((resolve) => {
       }]);
     }
   };
+
+const features = {
+  stock: true,
+  financeiro: true,
+  ia: true,
+  appointments: true,
+  techs: true,
+  maxProducts: true,
+};
 
 const navItems = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard, locked: false },
